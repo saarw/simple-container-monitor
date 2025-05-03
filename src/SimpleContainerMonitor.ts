@@ -32,7 +32,7 @@ class NotionPageUpdater {
         }
     }
 
-    // List first page of blocks and delete any callout parent with the marker in its children
+    // List first page of blocks and delete any quote parent with the marker in its children
     async cleanupOldBlocksWithMarker(): Promise<void> {
         if (!this.pageId) return;
         // List first page of children
@@ -40,18 +40,18 @@ class NotionPageUpdater {
         if (!childrenResp || !childrenResp.results) return;
         const blocks = childrenResp.results;
         for (const block of blocks) {
-            if (block.type === 'callout' && block.has_children) {
-                // Fetch children of the callout block
-                const calloutChildrenResp = await this.makeNotionRequest(`/blocks/${block.id}/children?page_size=20`, 'GET');
-                if (!calloutChildrenResp || !calloutChildrenResp.results) continue;
-                const hasMarker = calloutChildrenResp.results.some((child: any) =>
+            if (block.type === 'quote' && block.has_children) {
+                // Fetch children of the quote block
+                const quoteChildrenResp = await this.makeNotionRequest(`/blocks/${block.id}/children?page_size=20`, 'GET');
+                if (!quoteChildrenResp || !quoteChildrenResp.results) continue;
+                const hasMarker = quoteChildrenResp.results.some((child: any) =>
                     child.type === 'paragraph' &&
                     child.paragraph &&
                     child.paragraph.rich_text &&
                     child.paragraph.rich_text.some((rt: any) => rt.text && rt.text.content && rt.text.content.includes('Managed by simple-container-monitor'))
                 );
                 if (hasMarker) {
-                    // Delete the entire callout block (and all its children)
+                    // Delete the entire quote block (and all its children)
                     await this.makeNotionRequest(`/blocks/${block.id}`, 'DELETE');
                 }
             }
@@ -142,8 +142,8 @@ class NotionPageUpdater {
                         table_row: {
                             cells: [
                                 [{ type: 'text', text: { content: 'Container' } }],
-                                [{ type: 'text', text: { content: 'CPU Usage (%)' } }],
-                                [{ type: 'text', text: { content: 'Memory Usage (MB)' } }]
+                                [{ type: 'text', text: { content: 'CPU (%)' } }],
+                                [{ type: 'text', text: { content: 'RAM (MB)' } }]
                             ]
                         }
                     },
@@ -177,11 +177,11 @@ class NotionPageUpdater {
         }
         const timestamp = new Date().toISOString();
         const tableBlock = this.formatContainerStatsAsTable(stats);
-        // Compose the update as children of a callout block
-        const calloutBlock = {
+        // Compose the update as children of a quote block
+        const quoteBlock = {
             object: 'block',
-            type: 'callout',
-            callout: {
+            type: 'quote',
+            quote: {
                 rich_text: [
                     {
                         type: 'text',
@@ -193,7 +193,6 @@ class NotionPageUpdater {
                         }
                     }
                 ],
-                icon: { type: 'emoji', emoji: '🐳' },
                 children: [
                     {
                         object: 'block',
@@ -232,10 +231,10 @@ class NotionPageUpdater {
                 ]
             }
         };
-        // Add the callout block to the page
-        const updateData = { children: [calloutBlock] };
+        // Add the quote block to the page
+        const updateData = { children: [quoteBlock] };
         const resp = await this.makeNotionRequest(`/blocks/${this.pageId}/children`, 'PATCH', updateData);
-        // Remember the last block we created (the callout block)
+        // Remember the last block we created (the quote block)
         if (resp && resp.results && Array.isArray(resp.results) && resp.results.length > 0) {
             const last = resp.results[resp.results.length - 1];
             this.lastBlockId = last.id;
