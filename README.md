@@ -1,6 +1,6 @@
-# Docker Container Monitor with Notion Page Integration
+# Docker Container Monitor with Notion Integration
 
-This single-file TypeScript application monitors Docker containers and logs their CPU and memory usage every minute to a Notion Page so you can view them in the Notion mobile app.
+Single-file TypeScript application that monitors Docker containers and posts their CPU and memory usage every minute to a Notion Page so you can view them in the Notion mobile app.
 
 ## Setup
 Create a Notion integration:
@@ -12,7 +12,7 @@ Create a Notion integration:
 - Click "Submit" to create the integration
 - Copy the "Internal Integration Token" - this is your NOTION_TOKEN
 
-Create an empty Notion page that will be overwritten with stats and associate it with your integration:
+Create an empty Notion page that will be updated with stats and associate it with your integration:
 - Click "..." in the top right of the page
 - Go to the Connections submenu and select your integration
 - Copy the page ID from the URL (the part after the workspace name and before the question mark)
@@ -27,7 +27,7 @@ docker run -d --name container-monitor \
   -e NOTION_TOKEN=secret_abcdefghijklmnopqrstuvwxyz1234567890 \
   -e NOTION_PAGE_ID=page_id \
   -w /app \
-  node:lts \
+  node:18-alpine \
   npx tsx SimpleContainerMonitor.ts
 ```
 
