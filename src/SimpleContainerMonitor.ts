@@ -17,6 +17,9 @@ class NotionPageUpdater {
     private pageId: string | null = null;
     private notionToken: string;
     private apiUrl: string = 'https://api.notion.com/v1';
+    private static lastNotionRequestTime: number = 0;
+    private static notionRequestQueue: Promise<any> = Promise.resolve();
+    private lastBlockId: string | null = null;
 
     constructor() {
         this.notionToken = process.env.NOTION_TOKEN || '';
@@ -29,6 +32,32 @@ class NotionPageUpdater {
         }
     }
 
+    // List first page of blocks and delete any callout parent with the marker in its children
+    async cleanupOldBlocksWithMarker(): Promise<void> {
+        if (!this.pageId) return;
+        // List first page of children
+        const childrenResp = await this.makeNotionRequest(`/blocks/${this.pageId}/children?page_size=100`, 'GET');
+        if (!childrenResp || !childrenResp.results) return;
+        const blocks = childrenResp.results;
+        for (const block of blocks) {
+            if (block.type === 'callout' && block.has_children) {
+                // Fetch children of the callout block
+                const calloutChildrenResp = await this.makeNotionRequest(`/blocks/${block.id}/children?page_size=20`, 'GET');
+                if (!calloutChildrenResp || !calloutChildrenResp.results) continue;
+                const hasMarker = calloutChildrenResp.results.some((child: any) =>
+                    child.type === 'paragraph' &&
+                    child.paragraph &&
+                    child.paragraph.rich_text &&
+                    child.paragraph.rich_text.some((rt: any) => rt.text && rt.text.content && rt.text.content.includes('Managed by simple-container-monitor'))
+                );
+                if (hasMarker) {
+                    // Delete the entire callout block (and all its children)
+                    await this.makeNotionRequest(`/blocks/${block.id}`, 'DELETE');
+                }
+            }
+        }
+    }
+
     getPageId(): string {
         if (!this.pageId) {
             throw new Error('Page ID not available');
@@ -37,43 +66,66 @@ class NotionPageUpdater {
     }
     
     private async makeNotionRequest(path: string, method: string, data?: any): Promise<any> {
-        return new Promise((resolve, reject) => {
-            const options = {
-                hostname: 'api.notion.com',
-                path: `/v1${path}`,
-                method: method,
-                headers: {
-                    'Authorization': `Bearer ${this.notionToken}`,
-                    'Content-Type': 'application/json',
-                    'Notion-Version': '2022-06-28'
-                }
-            };
+        // Notion API: 3 requests/sec per integration (so 350ms between requests is safe)
+        const MIN_INTERVAL = 350; // ms
+        const now = Date.now();
+        const wait = Math.max(0, NotionPageUpdater.lastNotionRequestTime + MIN_INTERVAL - now);
 
-            const req = https.request(options, (res) => {
-                let data = '';
-                res.on('data', (chunk) => data += chunk);
-                res.on('end', () => {
-                    try {
-                        const response = JSON.parse(data);
-                        if (res.statusCode && res.statusCode >= 400) {
-                            reject(new Error(`Notion API error: ${res.statusCode} - ${JSON.stringify(response)}`));
-                        } else {
-                            resolve(response);
-                        }
-                    } catch (e) {
-                        reject(e);
+        // Chain requests to ensure order and rate limit
+        NotionPageUpdater.notionRequestQueue = NotionPageUpdater.notionRequestQueue.then(() =>
+            new Promise<void>(resolve => setTimeout(resolve, wait))
+        );
+        await NotionPageUpdater.notionRequestQueue;
+        NotionPageUpdater.lastNotionRequestTime = Date.now();
+
+        const makeRequest = (): Promise<any> => {
+            return new Promise((resolve, reject) => {
+                const options = {
+                    hostname: 'api.notion.com',
+                    path: `/v1${path}`,
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${this.notionToken}`,
+                        'Content-Type': 'application/json',
+                        'Notion-Version': '2022-06-28'
                     }
-                });
-            });
+                };
 
-            req.on('error', reject);
-            
-            if (data) {
-                req.write(JSON.stringify(data));
-            }
-            
-            req.end();
-        });
+                const req = https.request(options, (res) => {
+                    let data = '';
+                    res.on('data', (chunk) => data += chunk);
+                    res.on('end', () => {
+                        try {
+                            const response = JSON.parse(data);
+                            if (res.statusCode && res.statusCode === 429) {
+                                // Rate limited, retry after delay
+                                const retryAfter = parseInt(res.headers['retry-after'] as string, 10) || 1;
+                                setTimeout(() => {
+                                    makeRequest().then(resolve).catch(reject);
+                                }, retryAfter * 1000);
+                                return;
+                            } else if (res.statusCode && res.statusCode >= 400) {
+                                reject(new Error(`Notion API error: ${res.statusCode} - ${JSON.stringify(response)}`));
+                            } else {
+                                resolve(response);
+                            }
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                });
+
+                req.on('error', reject);
+                
+                if (data) {
+                    req.write(JSON.stringify(data));
+                }
+                
+                req.end();
+            });
+        };
+
+        return makeRequest();
     }
     
     private formatContainerStatsAsTable(stats: ContainerStats[]): any {
@@ -114,28 +166,80 @@ class NotionPageUpdater {
         if (!this.pageId) {
             throw new Error('Page ID not available');
         }
+        // Delete the last block we created (if any)
+        if (this.lastBlockId) {
+            try {
+                await this.makeNotionRequest(`/blocks/${this.lastBlockId}`, 'DELETE');
+            } catch (e) {
+                // Ignore errors (block may have been deleted manually)
+            }
+            this.lastBlockId = null;
+        }
         const timestamp = new Date().toISOString();
         const tableBlock = this.formatContainerStatsAsTable(stats);
-        const updateData = {
-            children: [
-                {
-                    object: 'block',
-                    type: 'heading_2',
-                    heading_2: {
-                        rich_text: [
-                            {
-                                type: 'text',
-                                text: {
-                                    content: `Container Stats - Updated: ${timestamp}`
-                                }
-                            }
-                        ]
+        // Compose the update as children of a callout block
+        const calloutBlock = {
+            object: 'block',
+            type: 'callout',
+            callout: {
+                rich_text: [
+                    {
+                        type: 'text',
+                        text: {
+                            content: 'Container Stats',
+                        },
+                        annotations: {
+                            bold: true
+                        }
                     }
-                },
-                tableBlock
-            ]
+                ],
+                icon: { type: 'emoji', emoji: '🐳' },
+                children: [
+                    {
+                        object: 'block',
+                        type: 'paragraph',
+                        paragraph: {
+                            rich_text: [
+                                {
+                                    type: 'text',
+                                    text: {
+                                        content: `Updated: ${timestamp}`
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    tableBlock,
+                    {
+                        object: 'block',
+                        type: 'paragraph',
+                        paragraph: {
+                            rich_text: [
+                                {
+                                    type: 'text',
+                                    text: {
+                                        content: 'Managed by simple-container-monitor'
+                                    },
+                                    annotations: {
+                                        color: 'gray',
+                                        bold: false,
+                                        italic: true
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
         };
-        await this.makeNotionRequest(`/blocks/${this.pageId}/children`, 'PATCH', updateData);
+        // Add the callout block to the page
+        const updateData = { children: [calloutBlock] };
+        const resp = await this.makeNotionRequest(`/blocks/${this.pageId}/children`, 'PATCH', updateData);
+        // Remember the last block we created (the callout block)
+        if (resp && resp.results && Array.isArray(resp.results) && resp.results.length > 0) {
+            const last = resp.results[resp.results.length - 1];
+            this.lastBlockId = last.id;
+        }
     }
 }
 
@@ -215,6 +319,9 @@ async function main() {
     try {
         const dockerMonitor = new DockerMonitor();
         const pageUpdater = new NotionPageUpdater();
+
+        // On startup, clean up any old blocks with the marker
+        await pageUpdater.cleanupOldBlocksWithMarker();
 
         // Update every minute
         setInterval(async () => {

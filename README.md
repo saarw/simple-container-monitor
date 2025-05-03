@@ -12,7 +12,7 @@ Create a Notion integration:
 - Click "Submit" to create the integration
 - Copy the "Internal Integration Token" - this is your NOTION_TOKEN
 
-Create an empty Notion page that will be overwritten with stats
+Create an empty Notion page that will be overwritten with stats and associate it with your integration:
 - Click "..." in the top right of the page
 - Go to the Connections submenu and select your integration
 - Copy the page ID from the URL (the part after the workspace name and before the question mark)
@@ -43,12 +43,3 @@ docker run -d --name container-monitor \
 - Node.js 18 or higher
 - Access to Docker daemon through `/var/run/docker.sock`
 - Notion account
-
-# Example usage
-
-```
-docker run \
-  -e NOTION_TOKEN=secret_xxx \
-  -e NOTION_PAGE_ID=page_id \
-  ...
-```
