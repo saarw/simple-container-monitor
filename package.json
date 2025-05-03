@@ -14,5 +14,21 @@
     "@types/node": "^20.10.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.3.2"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saarw/simple-container-monitor.git"
+  },
+  "keywords": [
+    "docker",
+    "monitoring",
+    "notion",
+    "container"
+  ],
+  "author": "William Saar <william@saar.se>",
+  "bugs": {
+    "url": "https://github.com/saarw/simple-container-monitor/issues"
+  },
+  "homepage": "https://github.com/saarw/simple-container-monitor#readme"
 } 

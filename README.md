@@ -43,3 +43,33 @@ docker run -d --name container-monitor \
 - Node.js 18 or higher
 - Access to Docker daemon through `/var/run/docker.sock`
 - Notion account
+
+# simple-container-monitor
+
+Docker container monitoring with Notion page integration.
+
+## Installation
+
+```sh
+npm install simple-container-monitor
+```
+
+## Usage
+
+// ... Add usage instructions here ...
+
+## Publishing
+
+To publish this module to npm:
+
+1. Update the `author`, `repository`, and other fields in `package.json` as needed.
+2. Run the following commands:
+
+```sh
+npm run build
+npm publish
+```
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
