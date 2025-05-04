@@ -29,11 +29,24 @@ No need to open ports and configure web routes or sign up for expensive monitori
    -v /var/run/docker.sock:/var/run/docker.sock \
    -e NOTION_TOKEN=secret_abcdefghijklmnopqrstuvwxyz1234567890 \
    -e NOTION_PAGE_ID=page_id \
-   -w /app \
    node:18-alpine \
    npx simple-container-monitor
    ```
-- Directly from this repo  
+- With Docker Compose, add the following service definition to your `docker-compose.yml` file:
+   ```yaml
+   services:
+     container-monitor:
+       image: node:18-alpine
+       container_name: container-monitor
+       volumes:
+         - /var/run/docker.sock:/var/run/docker.sock
+       environment:
+         NOTION_TOKEN: secret_abcdefghijklmnopqrstuvwxyz1234567890
+         NOTION_PAGE_ID: page_id
+       command: npx simple-container-monitor
+       restart: unless-stopped
+   ```
+- Or if you want to run the code directly from this repo to inspect the file before running  
    Clone this repo or download the SimpleContainerMonitor.ts file, then run the following Docker command.
    ```
    docker run -d --name container-monitor \
