@@ -1,4 +1,4 @@
-# Simple Container Stats on a Notion Page
+# Container Stats on a Notion Page
 <img alt="Screenshot of the Notion mobile app showing container stats" src="screenshot.jpg" width="300px" height="650px" align="right">
 An easily-inspectable TypeScript file without dependencies that runs as a Docker container to show CPU and memory usage for all containers in the free Notion mobile app or on the web.
 <br/><br/>
