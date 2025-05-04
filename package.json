@@ -1,6 +1,6 @@
 {
   "name": "simple-container-monitor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Docker container monitoring with Notion page integration",
   "main": "dist/SimpleContainerMonitor.js",
   "scripts": {
