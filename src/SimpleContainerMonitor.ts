@@ -177,7 +177,8 @@ class NotionPageUpdater {
             }
             this.lastBlockId = null;
         }
-        const timestamp = new Date().toISOString();
+        // Format timestamp without milliseconds, keep timezone
+        const timestamp = new Date().toISOString().split('.')[0] + 'Z';
         const tableBlock = this.formatContainerStatsAsTable(stats);
         // Compose the update as children of a quote block
         const quoteBlock = {
