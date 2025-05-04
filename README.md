@@ -33,8 +33,8 @@ No need to open ports and configure web routes or sign up for expensive monitori
    node:18-alpine \
    npx simple-container-monitor
    ```
-- Directly from this repo
-Clone this repo or download the SimpleContainerMonitor.ts file, then run the following Docker command.
+- Directly from this repo  
+   Clone this repo or download the SimpleContainerMonitor.ts file, then run the following Docker command.
    ```
    docker run -d --name container-monitor \
    -v /var/run/docker.sock:/var/run/docker.sock \
