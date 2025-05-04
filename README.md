@@ -76,7 +76,7 @@ Also runnable as a service outside Docker if Node 18+ is installed by setting th
 
 ## FAQ
 ### Why are the stats shown inside a quote block?
-The Notion API does not support batched updates and deletes so the wrapper allows deleting and writing the new block with 2 requests.
+The Notion API does not support batched updates and deletes so the quote wrapper allows deleting and writing blocks with just 2 requests.
 
 ### Why not Google Sheets/Airtable etc.
 Other services have complicated setup flows or limited free tiers. For instance, Google Sheets requires creating an OAuth app and authorizing the access using a visual UI.
