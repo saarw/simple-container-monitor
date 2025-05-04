@@ -1,8 +1,8 @@
 # Simple Container Stats on a Notion Page
 <img alt="Screenshot of the Notion mobile app showing container stats" src="screenshot.jpg" width="300px" height="650px" align="right">
-An easily-inspectable TypeScript file without dependencies that you run as a Docker container to show CPU and memory usage stats for all containers in the free Notion mobile app or on the web.
+An easily-inspectable TypeScript file without dependencies that runs as a Docker container to show CPU and memory usage for all containers in the free Notion mobile app or on the web.
 <br/><br/>
-Create a free [Notion](https://notion.com) account with a page and an integration and pass in the information to this monitor and it will update the container stats on the page every minute.
+Create a free Notion (https://notion.com) account with a page and an integration and pass in the information to this monitor and it will update the container stats on the page every minute.
 <br/><br/>
 No need to open ports and configure web routes or sign up for expensive monitoring services to get basic container stats in your mobile phone.
 
