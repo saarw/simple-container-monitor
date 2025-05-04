@@ -1,6 +1,6 @@
 {
   "name": "simple-container-monitor",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Docker container monitoring with Notion page integration",
   "main": "dist/SimpleContainerMonitor.js",
   "scripts": {
@@ -30,5 +30,8 @@
   "bugs": {
     "url": "https://github.com/saarw/simple-container-monitor/issues"
   },
-  "homepage": "https://github.com/saarw/simple-container-monitor#readme"
+  "homepage": "https://github.com/saarw/simple-container-monitor#readme",
+  "bin": {
+    "simple-container-monitor": "dist/SimpleContainerMonitor.js"
+  }
 } 
