@@ -326,9 +326,7 @@ async function main() {
         setInterval(async () => {
             try {
                 const stats = await dockerMonitor.getAllContainerStats();
-                console.log('Container stats:', stats);
                 await pageUpdater.updatePage(stats);
-                console.log(`Page ${pageUpdater.getPageId()} updated successfully`);
             } catch (error) {
                 console.error('Error in monitoring loop:', error);
             }

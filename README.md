@@ -1,5 +1,5 @@
 # Docker Container Monitor with Notion Integration
-An easily-inspectable TypeScript file without dependencies that you can run as a Docker container to make CPU and memory usage stats for all containers always available to you in the free Notion mobile app or on the web.  
+An easily-inspectable TypeScript file without dependencies that you run as a Docker container to show CPU and memory usage stats for all containers in the free Notion mobile app or on the web.  
 
 Create a free [Notion](https://notion.com) account with a page and an integration and pass in the information to this monitor and it will update the container stats on the page every minute.
 
